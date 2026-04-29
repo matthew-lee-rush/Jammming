@@ -27,7 +27,7 @@ h2 {
 }
 
 .App {
-  height: 100%;
+  min-height: 100vh;
   padding: 0 17% 10% 17%;
   background-image: url('./background_photo_desktop.webp');
   background-size: cover;
@@ -36,6 +36,25 @@ h2 {
   font-family: 'Work Sans', sans-serif;
   font-weight: 500;
   color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+  min-height: 80px;
+}
+
+.App-status p {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
 }
 
 .App-playlist {

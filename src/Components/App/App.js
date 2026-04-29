@@ -42,7 +42,8 @@ class App extends React.Component {
           artist: "Artist B",
           album: "Album B"
         }
-      ]
+      ],
+      isLoggedIn: false
     };
 
     // Bind methods
@@ -53,28 +54,26 @@ class App extends React.Component {
     this.search = this.search.bind(this);
     this.handleLoginClick = this.handleLoginClick.bind(this);
     this.handleLogoutClick = this.handleLogoutClick.bind(this);
-
-    this.state.isLoggedIn = false;
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    const pendingSearchTerm = localStorage.getItem('spotify_pending_search');
 
-    Spotify.verifyStoredToken().then(valid => {
-      this.setState({ isLoggedIn: valid });
+    // Check for stored token first
+    const storedValid = await Spotify.verifyStoredToken();
+    if (storedValid) {
+      this.setState({ isLoggedIn: true });
+      return;
+    }
 
-      if (code || pendingSearchTerm) {
-        Spotify.getAccessToken().then(token => {
-          this.setState({ isLoggedIn: !!token });
-          if (token && pendingSearchTerm) {
-            localStorage.removeItem('spotify_pending_search');
-            this.search(pendingSearchTerm);
-          }
-        });
+    // If we have a code, complete the auth exchange
+    if (code) {
+      const token = await Spotify.getAccessToken();
+      if (token) {
+        this.setState({ isLoggedIn: true });
       }
-    });
+    }
 
     window.addEventListener("beforeunload", () => {
       console.log("PAGE IS RELOADING");
@@ -145,6 +144,7 @@ class App extends React.Component {
   }
 
   render() {
+    console.log("Rendering App component - isLoggedIn:", this.state.isLoggedIn);
     return (
       <div>
         <h1>🔥 THIS IS THE REAL APP FILE</h1> 
@@ -153,7 +153,6 @@ class App extends React.Component {
           Ja<span className="highlight">mmm</span>ing
         </h1>
         <div className="App">
-          <SearchBar onSearch={this.search} />
         <div className="App-status">
           <p>
             Status: {this.state.isLoggedIn ? 'Logged in to Spotify' : 'Not logged in'}
@@ -168,6 +167,7 @@ class App extends React.Component {
             </button>
           )}
         </div>
+          <SearchBar onSearch={this.search} />
           <div className="App-playlist">
             <SearchResults
               searchResults={this.state.searchResults}

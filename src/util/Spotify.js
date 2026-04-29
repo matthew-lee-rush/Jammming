@@ -2,7 +2,7 @@ let accessToken;
 let accessTokenPromise = null;
 
 const clientId = '292fd97716ab4b269ef4660c4efce87e';
-const redirectUri = 'https://ninja-strict-pledge.ngrok-free.dev';
+const redirectUri = 'https://matt-jammming.surge.sh';
 const accessTokenKey = 'spotify_access_token';
 const codeVerifierKey = 'spotify_code_verifier';
 const pendingSearchKey = 'spotify_pending_search';
@@ -34,6 +34,12 @@ async function redirectToSpotifyAuth() {
 
   localStorage.setItem(codeVerifierKey, codeVerifier);
 
+  const statePayload = {
+    codeVerifier,
+    origin: window.location.origin
+  };
+  const state = btoa(unescape(encodeURIComponent(JSON.stringify(statePayload))));
+
   const authUrl =
     `https://accounts.spotify.com/authorize` +
     `?client_id=${clientId}` +
@@ -42,7 +48,8 @@ async function redirectToSpotifyAuth() {
     `&scope=playlist-modify-public` +
     `&show_dialog=true` +
     `&code_challenge_method=S256` +
-    `&code_challenge=${codeChallenge}`;
+    `&code_challenge=${codeChallenge}` +
+    `&state=${encodeURIComponent(state)}`;
 
   window.location = authUrl;
 }
@@ -74,7 +81,23 @@ const Spotify = {
         return;
       }
 
-      const codeVerifier = localStorage.getItem(codeVerifierKey);
+      let codeVerifier = localStorage.getItem(codeVerifierKey);
+      if (!codeVerifier) {
+        const state = params.get('state');
+        if (state) {
+          try {
+            const decoded = decodeURIComponent(escape(atob(state)));
+            const payload = JSON.parse(decoded);
+            if (payload.codeVerifier) {
+              codeVerifier = payload.codeVerifier;
+              localStorage.setItem(codeVerifierKey, codeVerifier);
+            }
+          } catch (error) {
+            console.warn('Could not parse Spotify state:', error);
+          }
+        }
+      }
+
       if (!codeVerifier) {
         console.warn('Missing code_verifier; restarting Spotify auth');
         localStorage.removeItem(accessTokenKey);
@@ -115,7 +138,12 @@ const Spotify = {
       accessToken = data.access_token;
       localStorage.setItem(accessTokenKey, accessToken);
       localStorage.removeItem(codeVerifierKey);
-      window.history.replaceState({}, document.title, '/');
+
+      // Clear the code from URL without reloading
+      const url = new URL(window.location);
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      window.history.replaceState({}, document.title, url.toString());
 
       accessTokenPromise = null;
       return accessToken;
