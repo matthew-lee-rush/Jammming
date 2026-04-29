@@ -17,7 +17,7 @@ A React web app that allows users to search for songs using the Spotify API and 
 https://your-app-name.surge.sh
 
 ## Preview
-![Jammming App Screenshot](./screenshot.png)
+![Jammming App Screenshot](./JammmingLoggedIn.png)
 
 ## How to Run Locally
 1. Clone the repo
